@@ -1,0 +1,37 @@
+{
+  "name": "raag_billing_server",
+  "version": "1.0.0",
+  "description": "Enterprise SaaS Backend API for Raag Billing and Inventory Management System",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:init": "node src/database/init_db.js"
+  },
+  "keywords": [
+    "raag-billing",
+    "pos",
+    "saas",
+    "express",
+    "mysql",
+    "jwt",
+    "billing"
+  ],
+  "author": "Raag Billing Team",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.9.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

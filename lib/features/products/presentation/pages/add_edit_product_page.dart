@@ -39,6 +39,7 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
   int? _selectedCategoryId;
   DateTime? _expiryDate;
   DateTime? _mfgDate;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -170,7 +171,7 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
             ],
             categoriesAsync.when(
               data: (categories) => DropdownButtonFormField<int?>(
-                value: _selectedCategoryId,
+                initialValue: _selectedCategoryId,
                 decoration: const InputDecoration(labelText: 'Category'),
                 items: [
                   const DropdownMenuItem(value: null, child: Text('No Category')),
@@ -327,8 +328,14 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
             ],
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _saveProduct,
-              child: const Text('Save Product'),
+              onPressed: _isSaving ? null : _saveProduct,
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save Product'),
             ),
           ],
         ),
@@ -337,6 +344,8 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
   }
 
   void _saveProduct() async {
+    if (_isSaving) return;
+
     final businessAsync = ref.read(businessProfileProvider).value;
     final isPharmacy = businessAsync?.shopCategory == 'Pharmacy';
 
@@ -351,48 +360,22 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
       }
     }
 
-    final repository = ref.read(productRepositoryProvider);
-    
-    final companion = ProductsCompanion(
-      name: drift.Value(_nameController.text),
-      sku: drift.Value(_skuController.text.isEmpty ? null : _skuController.text),
-      barcode: drift.Value(_barcodeController.text.isEmpty ? null : _barcodeController.text),
-      categoryId: drift.Value(_selectedCategoryId),
-      purchasePrice: drift.Value(double.tryParse(_purchasePriceController.text) ?? 0.0),
-      sellingPrice: drift.Value(double.tryParse(_sellingPriceController.text) ?? 0.0),
-      taxPercentage: drift.Value(double.tryParse(_taxPercentageController.text) ?? 0.0),
-      currentStock: drift.Value(double.tryParse(_stockController.text) ?? 0.0),
-      minimumStock: drift.Value(double.tryParse(_minStockController.text) ?? 0.0),
-      unit: drift.Value(_unitController.text),
-      description: drift.Value(_descriptionController.text.isEmpty ? null : _descriptionController.text),
-      rackNumber: drift.Value(_rackController.text.isEmpty ? null : _rackController.text),
-      batchNumber: drift.Value(_batchController.text.isEmpty ? null : _batchController.text),
-      hsnCode: drift.Value(_hsnController.text.isEmpty ? null : _hsnController.text),
-      purity: drift.Value(_purityController.text.isEmpty ? null : _purityController.text),
-      expiryDate: drift.Value(_expiryDate),
-      manufacturingDate: drift.Value(_mfgDate),
-      updatedAt: drift.Value(DateTime.now()),
-    );
+    setState(() => _isSaving = true);
 
-    if (widget.product == null) {
-      await repository.addProduct(companion);
-      NotificationService.showNotification(
-        id: DateTime.now().millisecond,
-        title: 'Product Added',
-        body: '${_nameController.text} has been added to inventory',
-      );
-    } else {
-      await repository.updateProduct(widget.product!.copyWith(
-        name: _nameController.text,
+    try {
+      final repository = ref.read(productRepositoryProvider);
+
+      final companion = ProductsCompanion(
+        name: drift.Value(_nameController.text),
         sku: drift.Value(_skuController.text.isEmpty ? null : _skuController.text),
         barcode: drift.Value(_barcodeController.text.isEmpty ? null : _barcodeController.text),
         categoryId: drift.Value(_selectedCategoryId),
-        purchasePrice: double.tryParse(_purchasePriceController.text) ?? 0.0,
-        sellingPrice: double.tryParse(_sellingPriceController.text) ?? 0.0,
-        taxPercentage: double.tryParse(_taxPercentageController.text) ?? 0.0,
-        currentStock: double.tryParse(_stockController.text) ?? 0.0,
-        minimumStock: double.tryParse(_minStockController.text) ?? 0.0,
-        unit: _unitController.text,
+        purchasePrice: drift.Value(double.tryParse(_purchasePriceController.text) ?? 0.0),
+        sellingPrice: drift.Value(double.tryParse(_sellingPriceController.text) ?? 0.0),
+        taxPercentage: drift.Value(double.tryParse(_taxPercentageController.text) ?? 0.0),
+        currentStock: drift.Value(double.tryParse(_stockController.text) ?? 0.0),
+        minimumStock: drift.Value(double.tryParse(_minStockController.text) ?? 0.0),
+        unit: drift.Value(_unitController.text),
         description: drift.Value(_descriptionController.text.isEmpty ? null : _descriptionController.text),
         rackNumber: drift.Value(_rackController.text.isEmpty ? null : _rackController.text),
         batchNumber: drift.Value(_batchController.text.isEmpty ? null : _batchController.text),
@@ -400,11 +383,49 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
         purity: drift.Value(_purityController.text.isEmpty ? null : _purityController.text),
         expiryDate: drift.Value(_expiryDate),
         manufacturingDate: drift.Value(_mfgDate),
-        updatedAt: DateTime.now(),
-      ));
-    }
+        updatedAt: drift.Value(DateTime.now()),
+      );
 
-    if (mounted) Navigator.pop(context);
+      if (widget.product == null) {
+        await repository.addProduct(companion);
+        NotificationService.showNotification(
+          id: DateTime.now().millisecond,
+          title: 'Product Added',
+          body: '${_nameController.text} has been added to inventory',
+        );
+      } else {
+        await repository.updateProduct(widget.product!.copyWith(
+          name: _nameController.text,
+          sku: drift.Value(_skuController.text.isEmpty ? null : _skuController.text),
+          barcode: drift.Value(_barcodeController.text.isEmpty ? null : _barcodeController.text),
+          categoryId: drift.Value(_selectedCategoryId),
+          purchasePrice: double.tryParse(_purchasePriceController.text) ?? 0.0,
+          sellingPrice: double.tryParse(_sellingPriceController.text) ?? 0.0,
+          taxPercentage: double.tryParse(_taxPercentageController.text) ?? 0.0,
+          currentStock: double.tryParse(_stockController.text) ?? 0.0,
+          minimumStock: double.tryParse(_minStockController.text) ?? 0.0,
+          unit: _unitController.text,
+          description: drift.Value(_descriptionController.text.isEmpty ? null : _descriptionController.text),
+          rackNumber: drift.Value(_rackController.text.isEmpty ? null : _rackController.text),
+          batchNumber: drift.Value(_batchController.text.isEmpty ? null : _batchController.text),
+          hsnCode: drift.Value(_hsnController.text.isEmpty ? null : _hsnController.text),
+          purity: drift.Value(_purityController.text.isEmpty ? null : _purityController.text),
+          expiryDate: drift.Value(_expiryDate),
+          manufacturingDate: drift.Value(_mfgDate),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving product: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   void _scanBarcode(BuildContext context) {

@@ -45,7 +45,25 @@ class SettingsRepository {
     });
   }
 
-  Future<void> updateSettings(AppSettingsData settings) {
-    return _db.update(_db.appSettings).replace(settings);
+  Future<void> updateSettings(AppSettingsData settings) async {
+    final existing = await (_db.select(_db.appSettings)..limit(1)).getSingleOrNull();
+    if (existing == null) {
+      await _db.into(_db.appSettings).insert(
+        AppSettingsCompanion(
+          language: Value(settings.language),
+          remindersEnabled: Value(settings.remindersEnabled),
+          barcodeBeepEnabled: Value(settings.barcodeBeepEnabled),
+          hideGstin: Value(settings.hideGstin),
+          barcodeScanEnabled: Value(settings.barcodeScanEnabled),
+          dateFormat: Value(settings.dateFormat),
+          timeFormat: Value(settings.timeFormat),
+          themeMode: Value(settings.themeMode),
+          thankYouNote: Value(settings.thankYouNote),
+        ),
+      );
+    } else {
+      final updatedWithRealId = settings.copyWith(id: existing.id);
+      await _db.update(_db.appSettings).replace(updatedWithRealId);
+    }
   }
 }

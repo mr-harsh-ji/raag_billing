@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:raag_billing/features/billing/presentation/providers/billing_providers.dart';
 import 'package:raag_billing/features/products/presentation/providers/product_providers.dart';
 import 'package:raag_billing/features/customers/presentation/providers/customer_providers.dart';
+import 'package:raag_billing/features/inventory/presentation/providers/inventory_providers.dart';
 import 'package:raag_billing/features/settings/presentation/providers/settings_providers.dart';
 import 'package:raag_billing/core/services/notification_checker.dart';
 import 'package:raag_billing/core/services/in_app_notification_service.dart';
@@ -30,12 +31,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final invoicesAsync = ref.watch(invoicesStreamProvider);
-    final productsAsync = ref.watch(productsStreamProvider);
     final customersAsync = ref.watch(filteredCustomersProvider);
     final businessAsync = ref.watch(businessProfileProvider);
     
     final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
 
     final currency = businessAsync.when(
       data: (d) => d.currencySymbol,
@@ -69,9 +68,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(invoicesStreamProvider);
-          ref.invalidate(productsStreamProvider);
-          ref.invalidate(filteredCustomersProvider);
+          await ref.read(businessRepositoryProvider).syncFromCloud();
+          await ref.read(productRepositoryProvider).syncFromCloud();
+          await ref.read(customerRepositoryProvider).syncFromCloud();
+          await ref.read(billingRepositoryProvider).syncFromCloud();
+          await ref.read(inventoryRepositoryProvider).syncFromCloud();
         },
         child: ListView(
           padding: const EdgeInsets.all(16),

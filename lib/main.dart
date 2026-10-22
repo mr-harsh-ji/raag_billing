@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/router/app_router.dart';
-import 'core/theme/app_theme.dart';
-import 'core/services/notification_service.dart';
 
+import 'core/router/app_router.dart';
+import 'core/services/auth_storage.dart';
+import 'core/services/notification_service.dart';
+import 'core/theme/app_theme.dart';
 import 'features/settings/presentation/providers/settings_providers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.init();
-  
+  await AuthStorage.init(); // Initialize SharedPreferences once in memory
+
   // Allow all orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -31,6 +33,7 @@ class RaagBillingApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
     final settingsAsync = ref.watch(appSettingsProvider);
     final themeMode = settingsAsync.maybeWhen(
       data: (s) {
@@ -44,11 +47,10 @@ class RaagBillingApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Raag Billing',
       theme: AppTheme.lightTheme,
-      darkTheme: ThemeData.dark(), // Basic dark theme for now
+      darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
   }
 }
-
